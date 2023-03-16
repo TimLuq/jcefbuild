@@ -14,14 +14,19 @@ on:
 
 jobs:
   build-macosx-amd64:
-    runs-on: macos-10.15
+    runs-on: macos-12
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v3
       -
         name: Setup environment
         run: |
           chmod +x scripts/install_macos_dependencies.sh
           ./scripts/install_macos_dependencies.sh
+      - name: Set up Java
+        uses: actions/setup-java@v3
+        with:
+          java-version: '8'
+          distribution: 'adopt'
       - name: Install Apple certificate
         env:
           BUILD_CERTIFICATE_BASE64: ${{ secrets.APPLE_BUILD_CERTIFICATE_BASE64 }}
@@ -53,7 +58,7 @@ jobs:
         name: Build
         run: |
           chmod +x compile_macosx.sh
-          ./compile_macosx.sh amd64 Release ${{ github.event.inputs.repo }} ${{ github.event.inputs.ref }} "${{ secrets.APPLE_BUILD_CERTIFICATE_NAME }}" ${{ secrets.APPLE_TEAM_NAME }} ${{ secrets.APPLE_API_KEY_NAME }} ${{ secrets.APPLE_API_KEY_ISSUER }}
+          ./compile_macosx.sh amd64 Release ${{ github.event.inputs.repo }} ${{ github.event.inputs.ref }} "${{ secrets.APPLE_BUILD_CERTIFICATE_NAME }}" ${{ secrets.APPLE_TEAM_NAME }} ${{ secrets.APPLE_API_KEY_ID }} "${HOME}/private_keys/AuthKey_${{ secrets.APPLE_API_KEY_NAME }}.p8" ${{ secrets.APPLE_API_KEY_ISSUER }}
       - name: Clean up keychain
         if: ${{ always() }}
         run: |
@@ -61,7 +66,7 @@ jobs:
           rm -rf "${HOME}/private_keys"
       -
         name: Export artifacts
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: macosx-amd64.tar.gz
           path: out/binary_distrib.tar.gz
